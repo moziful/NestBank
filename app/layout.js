@@ -1,6 +1,7 @@
 import "./globals.css";
 import Navbar from "./components/Navbar";
 import SideNav from "./components/SideNav";
+import StoreProvider from "../store/StoreProvider";
 
 export const metadata = {
   title: "Create Next App",
@@ -14,11 +15,13 @@ export default function RootLayout({ children }) {
       className={`h-full antialiased`}
     >
       <body className="h-screen overflow-hidden flex flex-col">
-        <Navbar />
-        <div className="flex flex-1 min-h-0">
-          <SideNav />
-          <main className="flex-1 overflow-y-auto">{children}</main>
-        </div>
+        <StoreProvider>
+          <Navbar />
+          <div className="flex flex-1 min-h-0">
+            <SideNav />
+            <main className="flex-1 overflow-y-auto">{children}</main>
+          </div>
+        </StoreProvider>
       </body>
     </html>
   );
