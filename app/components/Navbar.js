@@ -2,15 +2,15 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
-import { useTheme } from 'next-themes';
-import { FiBell, FiChevronDown, FiLogOut, FiMoon, FiSearch, FiSun } from 'react-icons/fi';
-import { useRole } from '../providers';
+import { useAuth, useTheme } from '../providers';
+import { FiBell, FiChevronDown, FiLogOut, FiMoon, FiSearch, FiSun, FiShield, FiKey } from 'react-icons/fi';
 
 const searchEntriesByRole = {
     Admin: [
         { label: 'Overview', href: '/admin/overview' },
+        { label: 'Staff Management & Provisioning', href: '/admin/staff-management' },
         { label: 'Customers', href: '/admin/customers' },
         { label: 'Bank Accounts', href: '/admin/bank-accounts' },
         { label: 'Transactions', href: '/admin/transactions' },
@@ -21,7 +21,6 @@ const searchEntriesByRole = {
         { label: 'Overview', href: '/staff/overview' },
         { label: 'Register Customer', href: '/staff/register-customer' },
         { label: 'Customers', href: '/staff/customers' },
-        { label: 'Create Bank Account', href: '/staff/create-bank-account' },
         { label: 'Account Directory', href: '/staff/account-directory' },
         { label: 'Transactions', href: '/staff/transactions' },
         { label: 'Pending Requests', href: '/staff/pending-requests' },
@@ -31,15 +30,10 @@ const searchEntriesByRole = {
         { label: 'My Accounts', href: '/my-accounts' },
         { label: 'Transfer Money', href: '/transfer-money' },
         { label: 'Transactions', href: '/transactions' },
+        { label: 'Configure PIN', href: '/profile-security' },
         { label: 'Statements', href: '/statements' },
     ],
 };
-
-const roleOptions = [
-    { label: 'Admin', color: 'bg-red-500' },
-    { label: 'Bank Staff', color: 'bg-yellow-400' },
-    { label: 'Customer', color: 'bg-green-500' },
-];
 
 const overviewPaths = {
     Admin: '/admin/overview',
@@ -50,7 +44,7 @@ const overviewPaths = {
 const notificationsByRole = {
     Admin: [
         { id: 'admin-approval', title: 'Transfer needs approval', detail: 'A transfer is waiting for your review.', href: '/admin/approvals' },
-        { id: 'admin-transaction', title: 'Transaction successful', detail: 'A transfer was posted successfully.', href: '/admin/transactions' },
+        { id: 'admin-transaction', title: 'Security policy enforced', detail: 'All customer access restricted by role.', href: '/admin/overview' },
         { id: 'admin-customer', title: 'Customer registered', detail: 'A new customer profile is ready to review.', href: '/admin/customers' },
     ],
     'Bank Staff': [
@@ -60,28 +54,10 @@ const notificationsByRole = {
     ],
     Customer: [
         { id: 'customer-transfer', title: 'Transfer successful', detail: 'Your transfer was completed successfully.', href: '/transactions' },
-        { id: 'customer-deposit', title: 'Deposit received', detail: 'A deposit was added to your account.', href: '/transactions' },
+        { id: 'customer-security', title: 'Security Check', detail: 'Ensure your transaction PIN is configured.', href: '/profile-security' },
         { id: 'customer-statement', title: 'Statement ready', detail: 'Your latest statement is available.', href: '/statements' },
     ],
 };
-
-function RoleSwitcher({ role, onRoleChange }) {
-    return (
-        <div role="group" aria-label="Temporary role selector" className="flex shrink-0 items-center gap-2">
-            {roleOptions.map((option) => (
-                <button
-                    key={option.label}
-                    type="button"
-                    aria-label={`Switch role to ${option.label}`}
-                    aria-pressed={role === option.label}
-                    title={option.label}
-                    onClick={() => onRoleChange(option.label)}
-                    className={`h-4 w-4 rounded-full ${option.color} ${role === option.label ? 'ring-2 ring-surface ring-offset-2 ring-offset-primary' : 'opacity-75 hover:opacity-100'}`}
-                />
-            ))}
-        </div>
-    );
-}
 
 function SearchBox({ role, query, onQueryChange, mobile = false }) {
     const matchingEntries = (searchEntriesByRole[role] ?? []).filter(
@@ -98,7 +74,7 @@ function SearchBox({ role, query, onQueryChange, mobile = false }) {
                     id={inputId}
                     value={query}
                     onChange={(event) => onQueryChange(event.target.value)}
-                    placeholder="Search"
+                    placeholder="Search banking features"
                     className="w-full bg-transparent text-sm text-surface outline-none placeholder:text-surface/70"
                 />
             </div>
@@ -124,16 +100,19 @@ function SearchBox({ role, query, onQueryChange, mobile = false }) {
 
 export default function Navbar() {
     const router = useRouter();
+    const pathname = usePathname();
     const { resolvedTheme, setTheme } = useTheme();
-    const { role, setRole } = useRole();
+    const { user, logout, loading } = useAuth();
     const [query, setQuery] = useState('');
     const [notificationsOpen, setNotificationsOpen] = useState(false);
     const [profileOpen, setProfileOpen] = useState(false);
     const [readNotificationIds, setReadNotificationIds] = useState([]);
     const notificationRef = useRef(null);
+
+    const role = user?.role || 'Customer';
     const notifications = notificationsByRole[role] ?? [];
     const unreadCount = notifications.filter((notification) => !readNotificationIds.includes(notification.id)).length;
-    const dashboardHref = overviewPaths[role];
+    const dashboardHref = overviewPaths[role] || '/overview';
 
     useEffect(() => {
         if (!notificationsOpen) return undefined;
@@ -159,11 +138,6 @@ export default function Navbar() {
         };
     }, [notificationsOpen]);
 
-    function handleRoleChange(nextRole) {
-        setRole(nextRole);
-        router.push(overviewPaths[nextRole]);
-    }
-
     function toggleTheme() {
         setTheme((resolvedTheme ?? 'light') === 'dark' ? 'light' : 'dark');
     }
@@ -181,6 +155,37 @@ export default function Navbar() {
         ]);
     }
 
+    // Hide or simplify navbar on auth pages
+    if (pathname === '/login' || pathname === '/register') {
+        return (
+            <header className="z-40 shrink-0 bg-primary text-surface shadow-sm">
+                <div className="flex min-h-16 items-center justify-between px-4 sm:px-6">
+                    <Link href="/" aria-label="NestBank" className="flex shrink-0 items-center gap-3">
+                        <Image
+                            src="/NestBankLogo.jpg"
+                            alt="NestBank"
+                            width={150}
+                            height={31}
+                            priority
+                            className="h-8 w-[150px] object-contain"
+                        />
+                    </Link>
+                    <div className="flex items-center gap-4 text-sm font-medium">
+                        {pathname === '/login' ? (
+                            <Link href="/register" className="text-surface hover:text-accent underline">
+                                Register Account
+                            </Link>
+                        ) : (
+                            <Link href="/login" className="text-surface hover:text-accent underline">
+                                Back to Login
+                            </Link>
+                        )}
+                    </div>
+                </div>
+            </header>
+        );
+    }
+
     return (
         <header className="z-40 shrink-0 bg-primary text-surface shadow-sm">
             <div className="flex min-h-16 items-center gap-4 border-b border-surface/20 px-4 sm:px-6">
@@ -195,8 +200,10 @@ export default function Navbar() {
                     />
                 </Link>
 
-                <div className="hidden sm:block">
-                    <RoleSwitcher role={role} onRoleChange={handleRoleChange} />
+                {/* Role badge */}
+                <div className="hidden items-center gap-2 rounded-full border border-surface/30 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider sm:flex">
+                    <FiShield className="h-3.5 w-3.5 text-accent" />
+                    <span>{role}</span>
                 </div>
 
                 <SearchBox role={role} query={query} onQueryChange={setQuery} />
@@ -211,18 +218,25 @@ export default function Navbar() {
                             className="relative grid h-10 w-10 place-items-center rounded-md text-surface hover:bg-secondary"
                         >
                             <FiBell aria-hidden="true" className="h-5 w-5" />
-                            {unreadCount > 0 && <span className="absolute right-1 top-1 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-accent px-1 text-[10px] font-bold text-surface">{unreadCount}</span>}
+                            {unreadCount > 0 && (
+                                <span className="absolute right-1 top-1 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-accent px-1 text-[10px] font-bold text-surface">
+                                    {unreadCount}
+                                </span>
+                            )}
                         </button>
                         {notificationsOpen && (
                             <div className="absolute right-0 top-12 z-50 w-72 rounded-md border border-primary/10 bg-surface p-4 text-primary shadow-xl sm:w-80">
                                 <div className="flex items-center justify-between border-b border-primary/10 pb-3">
                                     <h2 className="font-semibold">Notifications</h2>
-                                    {unreadCount > 0 && <button type="button" onClick={markAllNotificationsRead} className="text-xs font-medium text-accent hover:underline">Mark all read</button>}
+                                    {unreadCount > 0 && (
+                                        <button type="button" onClick={markAllNotificationsRead} className="text-xs font-medium text-accent hover:underline">
+                                            Mark all read
+                                        </button>
+                                    )}
                                 </div>
                                 <ul className="divide-y divide-primary/10">
                                     {notifications.map((notification) => {
                                         const isUnread = !readNotificationIds.includes(notification.id);
-
                                         return (
                                             <li key={notification.id}>
                                                 <Link
@@ -245,17 +259,6 @@ export default function Navbar() {
                         )}
                     </div>
 
-                    <button
-                        type="button"
-                        aria-label={`Switch to ${resolvedTheme === 'dark' ? 'light' : 'dark'} mode`}
-                        disabled
-                        onClick={toggleTheme}
-                        className="grid h-10 w-10 place-items-center rounded-md text-surface hover:bg-secondary"
-                    >
-                        <FiMoon aria-hidden="true" className="h-5 w-5 dark:hidden" />
-                        <FiSun aria-hidden="true" className="hidden h-5 w-5 dark:block" />
-                    </button>
-
                     <div
                         className="relative"
                         onMouseEnter={() => setProfileOpen(true)}
@@ -272,10 +275,10 @@ export default function Navbar() {
                             onFocus={() => setProfileOpen(true)}
                             className="flex h-10 items-center gap-2 rounded-md px-1.5 text-left hover:bg-secondary sm:px-2"
                         >
-                            <Image src="/admin-avatar.svg" alt="Alex Morgan" width={34} height={34} className="h-[34px] w-[34px] rounded-full border border-surface/40" />
+                            <Image src="/admin-avatar.svg" alt={user?.name || 'User'} width={34} height={34} className="h-[34px] w-[34px] rounded-full border border-surface/40" />
                             <span className="hidden leading-tight sm:block">
-                                <span className="block text-sm font-medium">Alex Morgan</span>
-                                <span className="block text-[11px] text-surface/75">{role === 'Admin' ? 'Administrator' : role}</span>
+                                <span className="block text-sm font-medium">{user?.name || 'Authorized User'}</span>
+                                <span className="block text-[11px] text-surface/75">{user?.role || 'Customer'}</span>
                             </span>
                             <FiChevronDown aria-hidden="true" className="hidden h-4 w-4 sm:block" />
                         </button>
@@ -284,18 +287,34 @@ export default function Navbar() {
                                 <div className="flex items-center gap-3 border-b border-primary/10 pb-4">
                                     <Image src="/admin-avatar.svg" alt="" width={48} height={48} className="h-12 w-12 rounded-full" />
                                     <div className="min-w-0">
-                                        <p className="truncate font-semibold">Alex Morgan</p>
-                                        <p className="truncate text-xs opacity-70">alex.morgan@nestbank.com</p>
+                                        <p className="truncate font-semibold">{user?.name || 'User'}</p>
+                                        <p className="truncate text-xs opacity-70">{user?.email || 'N/A'}</p>
                                     </div>
                                 </div>
                                 <dl className="space-y-2 py-4 text-sm">
-                                    <div className="flex justify-between gap-3"><dt className="opacity-70">Role</dt><dd className="font-medium">{role}</dd></div>
-                                    <div className="flex justify-between gap-3"><dt className="opacity-70">Access</dt><dd className="font-medium">Bank operations</dd></div>
+                                    <div className="flex justify-between gap-3"><dt className="opacity-70">Role</dt><dd className="font-semibold text-accent">{user?.role}</dd></div>
+                                    <div className="flex justify-between gap-3"><dt className="opacity-70">Status</dt><dd className="font-medium text-green-600">{user?.status || 'Active'}</dd></div>
+                                    <div className="flex justify-between gap-3"><dt className="opacity-70">User ID</dt><dd className="font-mono text-xs truncate max-w-[120px]">{user?.id}</dd></div>
                                 </dl>
+
+                                {user?.role === 'Customer' && (
+                                    <Link
+                                        href="/profile-security"
+                                        onClick={() => setProfileOpen(false)}
+                                        className="flex w-full items-center gap-2 border-t border-primary/10 py-2.5 text-left text-sm font-medium text-primary hover:text-accent"
+                                    >
+                                        <FiKey aria-hidden="true" className="h-4 w-4" />
+                                        Configure PIN
+                                    </Link>
+                                )}
+
                                 <button
                                     type="button"
-                                    onClick={() => setProfileOpen(false)}
-                                    className="flex w-full items-center gap-2 border-t border-primary/10 pt-3 text-left text-sm font-medium text-accent hover:text-secondary"
+                                    onClick={() => {
+                                        setProfileOpen(false);
+                                        logout();
+                                    }}
+                                    className="flex w-full items-center gap-2 border-t border-primary/10 pt-3 text-left text-sm font-medium text-red-600 hover:text-red-700"
                                 >
                                     <FiLogOut aria-hidden="true" className="h-4 w-4" />
                                     Log out
@@ -308,9 +327,8 @@ export default function Navbar() {
 
             <div className="flex items-center gap-4 px-4 py-3 md:hidden">
                 <SearchBox mobile role={role} query={query} onQueryChange={setQuery} />
-                <RoleSwitcher role={role} onRoleChange={handleRoleChange} />
+                <span className="rounded bg-accent/30 px-2 py-0.5 text-xs font-semibold">{role}</span>
             </div>
-
         </header>
     );
 }

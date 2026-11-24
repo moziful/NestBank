@@ -1,45 +1,106 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState } from 'react';
-import { ThemeProvider } from 'next-themes';
+import { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 
-const RoleContext = createContext(null);
-const availableRoles = ['Admin', 'Bank Staff', 'Customer'];
+const AuthContext = createContext(null);
+const ThemeContext = createContext({
+    theme: 'light',
+    resolvedTheme: 'light',
+    setTheme: () => {},
+});
 
-export function useRole() {
-    const roleState = useContext(RoleContext);
-
-    if (!roleState) {
-        throw new Error('useRole must be used within AppProviders');
+export function useAuth() {
+    const context = useContext(AuthContext);
+    if (!context) {
+        throw new Error('useAuth must be used within AppProviders');
     }
+    return context;
+}
 
-    return roleState;
+export function useTheme() {
+    return useContext(ThemeContext);
+}
+
+// Backwards compatibility for existing useRole() callers
+export function useRole() {
+    const { user, setUser } = useAuth();
+    return {
+        role: user?.role || 'Customer',
+        setRole: (newRole) => {
+            if (user) setUser({ ...user, role: newRole });
+        },
+    };
 }
 
 export default function AppProviders({ children }) {
-    const [role, setRoleState] = useState('Admin');
+    const [user, setUser] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [theme, setThemeState] = useState('light');
+    const router = useRouter();
+    const pathname = usePathname();
+
+    // Theme initialization and synchronization
+    useEffect(() => {
+        const savedTheme = window.localStorage.getItem('nestbank-theme') || 'light';
+        setThemeState(savedTheme);
+        if (savedTheme === 'dark') {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    }, []);
+
+    const setTheme = (newTheme) => {
+        setThemeState(newTheme);
+        window.localStorage.setItem('nestbank-theme', newTheme);
+        if (newTheme === 'dark') {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    };
+
+    const fetchSession = useCallback(async () => {
+        try {
+            const res = await fetch('/api/auth/me');
+            if (res.ok) {
+                const data = await res.json();
+                if (data.authenticated && data.user) {
+                    setUser(data.user);
+                    return data.user;
+                }
+            }
+            setUser(null);
+            return null;
+        } catch {
+            setUser(null);
+            return null;
+        } finally {
+            setLoading(false);
+        }
+    }, []);
 
     useEffect(() => {
-        const savedRole = window.localStorage.getItem('nestbank-role');
+        fetchSession();
+    }, [fetchSession, pathname]);
 
-        if (availableRoles.includes(savedRole) && savedRole !== role) {
-            const timeoutId = window.setTimeout(() => setRoleState(savedRole), 0);
-            return () => window.clearTimeout(timeoutId);
+    const logout = async () => {
+        try {
+            await fetch('/api/auth/logout', { method: 'POST' });
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setUser(null);
+            router.push('/login');
         }
-    }, [role]);
-
-    function setRole(nextRole) {
-        if (!availableRoles.includes(nextRole)) return;
-
-        window.localStorage.setItem('nestbank-role', nextRole);
-        setRoleState(nextRole);
-    }
+    };
 
     return (
-        <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
-            <RoleContext.Provider value={{ role, setRole }}>
+        <ThemeContext.Provider value={{ theme, resolvedTheme: theme, setTheme }}>
+            <AuthContext.Provider value={{ user, setUser, loading, logout, refreshSession: fetchSession }}>
                 {children}
-            </RoleContext.Provider>
-        </ThemeProvider>
+            </AuthContext.Provider>
+        </ThemeContext.Provider>
     );
 }
