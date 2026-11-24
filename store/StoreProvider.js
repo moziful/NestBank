@@ -16,7 +16,7 @@ export default function StoreProvider({ children }) {
     }, []);
 
     if (!store) {
-        return null;
+        return children;
     }
 
     return <Provider store={store}>{children}</Provider>;
