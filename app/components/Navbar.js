@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTheme } from 'next-themes';
 import { FiBell, FiChevronDown, FiLogOut, FiMoon, FiSearch, FiSun } from 'react-icons/fi';
 import { useRole } from '../providers';
@@ -45,6 +45,24 @@ const overviewPaths = {
     Admin: '/admin/overview',
     'Bank Staff': '/staff/overview',
     Customer: '/overview',
+};
+
+const notificationsByRole = {
+    Admin: [
+        { id: 'admin-approval', title: 'Transfer needs approval', detail: 'A transfer is waiting for your review.', href: '/admin/approvals' },
+        { id: 'admin-transaction', title: 'Transaction successful', detail: 'A transfer was posted successfully.', href: '/admin/transactions' },
+        { id: 'admin-customer', title: 'Customer registered', detail: 'A new customer profile is ready to review.', href: '/admin/customers' },
+    ],
+    'Bank Staff': [
+        { id: 'staff-request', title: 'Transaction request', detail: 'A customer request is ready to process.', href: '/staff/pending-requests' },
+        { id: 'staff-transaction', title: 'Transaction processed', detail: 'The transaction was recorded successfully.', href: '/staff/transactions' },
+        { id: 'staff-customer', title: 'Customer registration', detail: 'Continue a recently started registration.', href: '/staff/register-customer' },
+    ],
+    Customer: [
+        { id: 'customer-transfer', title: 'Transfer successful', detail: 'Your transfer was completed successfully.', href: '/transactions' },
+        { id: 'customer-deposit', title: 'Deposit received', detail: 'A deposit was added to your account.', href: '/transactions' },
+        { id: 'customer-statement', title: 'Statement ready', detail: 'Your latest statement is available.', href: '/statements' },
+    ],
 };
 
 function RoleSwitcher({ role, onRoleChange }) {
@@ -111,8 +129,35 @@ export default function Navbar() {
     const [query, setQuery] = useState('');
     const [notificationsOpen, setNotificationsOpen] = useState(false);
     const [profileOpen, setProfileOpen] = useState(false);
-    const [unreadCount, setUnreadCount] = useState(3);
+    const [readNotificationIds, setReadNotificationIds] = useState([]);
+    const notificationRef = useRef(null);
+    const notifications = notificationsByRole[role] ?? [];
+    const unreadCount = notifications.filter((notification) => !readNotificationIds.includes(notification.id)).length;
     const dashboardHref = overviewPaths[role];
+
+    useEffect(() => {
+        if (!notificationsOpen) return undefined;
+
+        function handlePointerDown(event) {
+            if (!notificationRef.current?.contains(event.target)) {
+                setNotificationsOpen(false);
+            }
+        }
+
+        function handleKeyDown(event) {
+            if (event.key === 'Escape') {
+                setNotificationsOpen(false);
+            }
+        }
+
+        document.addEventListener('pointerdown', handlePointerDown);
+        document.addEventListener('keydown', handleKeyDown);
+
+        return () => {
+            document.removeEventListener('pointerdown', handlePointerDown);
+            document.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [notificationsOpen]);
 
     function handleRoleChange(nextRole) {
         setRole(nextRole);
@@ -121,6 +166,19 @@ export default function Navbar() {
 
     function toggleTheme() {
         setTheme((resolvedTheme ?? 'light') === 'dark' ? 'light' : 'dark');
+    }
+
+    function markNotificationRead(notificationId) {
+        setReadNotificationIds((currentIds) => currentIds.includes(notificationId)
+            ? currentIds
+            : [...currentIds, notificationId]);
+        setNotificationsOpen(false);
+    }
+
+    function markAllNotificationsRead() {
+        setReadNotificationIds((currentIds) => [
+            ...new Set([...currentIds, ...notifications.map((notification) => notification.id)]),
+        ]);
     }
 
     return (
@@ -144,12 +202,12 @@ export default function Navbar() {
                 <SearchBox role={role} query={query} onQueryChange={setQuery} />
 
                 <div className="flex shrink-0 items-center gap-1 sm:gap-2">
-                    <div className="relative">
+                    <div className="relative" ref={notificationRef}>
                         <button
                             type="button"
                             aria-label={`Notifications, ${unreadCount} unread`}
                             aria-expanded={notificationsOpen}
-                            onClick={() => setNotificationsOpen(!notificationsOpen)}
+                            onClick={() => setNotificationsOpen((isOpen) => !isOpen)}
                             className="relative grid h-10 w-10 place-items-center rounded-md text-surface hover:bg-secondary"
                         >
                             <FiBell aria-hidden="true" className="h-5 w-5" />
@@ -159,15 +217,30 @@ export default function Navbar() {
                             <div className="absolute right-0 top-12 z-50 w-72 rounded-md border border-primary/10 bg-surface p-4 text-primary shadow-xl sm:w-80">
                                 <div className="flex items-center justify-between border-b border-primary/10 pb-3">
                                     <h2 className="font-semibold">Notifications</h2>
-                                    {unreadCount > 0 && <button type="button" onClick={() => setUnreadCount(0)} className="text-xs font-medium text-accent hover:underline">Mark all read</button>}
+                                    {unreadCount > 0 && <button type="button" onClick={markAllNotificationsRead} className="text-xs font-medium text-accent hover:underline">Mark all read</button>}
                                 </div>
-                                {unreadCount > 0 ? (
-                                    <ul className="divide-y divide-primary/10">
-                                        <li className="py-3 text-sm"><span className="mb-1 block font-medium">Approval requested</span><span className="text-xs opacity-70">A transfer is waiting for review.</span></li>
-                                        <li className="py-3 text-sm"><span className="mb-1 block font-medium">New customer registered</span><span className="text-xs opacity-70">A customer profile needs verification.</span></li>
-                                        <li className="pt-3 text-sm"><span className="mb-1 block font-medium">Daily report ready</span><span className="text-xs opacity-70">Your operations summary is available.</span></li>
-                                    </ul>
-                                ) : <p className="pt-4 text-sm opacity-70">You are all caught up.</p>}
+                                <ul className="divide-y divide-primary/10">
+                                    {notifications.map((notification) => {
+                                        const isUnread = !readNotificationIds.includes(notification.id);
+
+                                        return (
+                                            <li key={notification.id}>
+                                                <Link
+                                                    href={notification.href}
+                                                    onClick={() => markNotificationRead(notification.id)}
+                                                    className="flex gap-3 py-3 text-sm hover:text-accent"
+                                                >
+                                                    <span aria-hidden="true" className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${isUnread ? 'bg-accent' : 'bg-primary/20'}`} />
+                                                    <span>
+                                                        <span className="mb-1 block font-medium">{notification.title}</span>
+                                                        <span className="block text-xs opacity-70">{notification.detail}</span>
+                                                    </span>
+                                                </Link>
+                                            </li>
+                                        );
+                                    })}
+                                </ul>
+                                {unreadCount === 0 && <p className="border-t border-primary/10 pt-3 text-xs opacity-70">You are all caught up.</p>}
                             </div>
                         )}
                     </div>
