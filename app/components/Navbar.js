@@ -92,6 +92,7 @@ export default function Navbar({ onMenuToggle, menuOpen = false }) {
     const [notifications, setNotifications] = useState([]);
     const [unreadCount, setUnreadCount] = useState(0);
     const notificationRef = useRef(null);
+    const profileRef = useRef(null);
 
     const role = user?.role || 'Customer';
     const dashboardHref = overviewPaths[role] || '/customer';
@@ -122,17 +123,21 @@ export default function Navbar({ onMenuToggle, menuOpen = false }) {
     }, [user, pathname]);
 
     useEffect(() => {
-        if (!notificationsOpen) return undefined;
+        if (!notificationsOpen && !profileOpen) return undefined;
 
         function handlePointerDown(event) {
             if (!notificationRef.current?.contains(event.target)) {
                 setNotificationsOpen(false);
+            }
+            if (!profileRef.current?.contains(event.target)) {
+                setProfileOpen(false);
             }
         }
 
         function handleKeyDown(event) {
             if (event.key === 'Escape') {
                 setNotificationsOpen(false);
+                setProfileOpen(false);
             }
         }
 
@@ -143,7 +148,7 @@ export default function Navbar({ onMenuToggle, menuOpen = false }) {
             document.removeEventListener('pointerdown', handlePointerDown);
             document.removeEventListener('keydown', handleKeyDown);
         };
-    }, [notificationsOpen]);
+    }, [notificationsOpen, profileOpen]);
 
     function toggleTheme() {
         setTheme((resolvedTheme ?? 'light') === 'dark' ? 'light' : 'dark');
@@ -161,7 +166,7 @@ export default function Navbar({ onMenuToggle, menuOpen = false }) {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ notificationId }),
             });
-        } catch {}
+        } catch { }
     }
 
     async function markAllNotificationsRead() {
@@ -173,7 +178,7 @@ export default function Navbar({ onMenuToggle, menuOpen = false }) {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ markAll: true }),
             });
-        } catch {}
+        } catch { }
     }
 
     // Hide or simplify navbar on auth pages
@@ -183,13 +188,14 @@ export default function Navbar({ onMenuToggle, menuOpen = false }) {
                 <div className="flex min-h-16 items-center justify-between gap-3 px-3 sm:px-6">
                     <Link href="/" aria-label="NestBank" className="flex shrink-0 items-center gap-3">
                         <Image
-                            src="/NestBankLogo.jpg"
+                            src="/favicon.ico"
                             alt="NestBank"
-                            width={150}
-                            height={31}
+                            width={36}
+                            height={36}
                             priority
-                            className="h-7 w-[128px] object-contain sm:h-8 sm:w-[150px]"
+                            className="h-8 w-8 object-contain sm:h-9 sm:w-9"
                         />
+                        <span className="bank-name-outline text-xl font-bold tracking-tight sm:text-2xl">NestBank</span>
                     </Link>
                     <div className="flex items-center gap-2 text-xs font-medium sm:gap-4 sm:text-sm">
                         {pathname === '/login' ? (
@@ -223,13 +229,14 @@ export default function Navbar({ onMenuToggle, menuOpen = false }) {
                 )}
                 <Link href={dashboardHref} aria-label="NestBank dashboard" className="flex shrink-0 items-center gap-3">
                     <Image
-                        src="/NestBankLogo.jpg"
+                        src="/favicon.ico"
                         alt="NestBank"
-                        width={150}
-                        height={31}
+                        width={36}
+                        height={36}
                         priority
-                        className="h-7 w-[128px] object-contain sm:h-8 sm:w-[150px]"
+                        className="h-8 w-8 object-contain sm:h-9 sm:w-9"
                     />
+                    <span className="bank-name-outline hidden text-xl font-bold tracking-tight sm:block sm:text-2xl">NestBank</span>
                 </Link>
 
                 {/* Role badge */}
@@ -240,13 +247,16 @@ export default function Navbar({ onMenuToggle, menuOpen = false }) {
 
                 <SearchBox role={role} query={query} onQueryChange={setQuery} />
 
-                <div className="flex shrink-0 items-center gap-1 sm:gap-2">
+                <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-2">
                     <div className="relative" ref={notificationRef}>
                         <button
                             type="button"
                             aria-label={`Notifications, ${unreadCount} unread`}
                             aria-expanded={notificationsOpen}
-                            onClick={() => setNotificationsOpen((isOpen) => !isOpen)}
+                            onClick={() => {
+                                setProfileOpen(false);
+                                setNotificationsOpen((isOpen) => !isOpen);
+                            }}
                             className="relative grid h-10 w-10 place-items-center rounded-md text-surface hover:bg-secondary"
                         >
                             <FiBell aria-hidden="true" className="h-5 w-5" />
@@ -257,7 +267,7 @@ export default function Navbar({ onMenuToggle, menuOpen = false }) {
                             )}
                         </button>
                         {notificationsOpen && (
-                            <div className="absolute right-0 top-12 z-50 w-72 rounded-md border border-primary/10 bg-surface p-4 text-primary shadow-xl sm:w-80">
+                            <div className="navbar-notification-popover absolute right-0 top-12 z-50 rounded-md border border-primary/10 bg-surface p-4 text-primary shadow-xl">
                                 <div className="flex items-center justify-between border-b border-primary/10 pb-3">
                                     <h2 className="font-semibold">Notifications</h2>
                                     {unreadCount > 0 && (
@@ -306,8 +316,7 @@ export default function Navbar({ onMenuToggle, menuOpen = false }) {
 
                     <div
                         className="relative"
-                        onMouseEnter={() => setProfileOpen(true)}
-                        onMouseLeave={() => setProfileOpen(false)}
+                        ref={profileRef}
                         onBlur={(event) => {
                             if (!event.currentTarget.contains(event.relatedTarget)) setProfileOpen(false);
                         }}
@@ -316,8 +325,10 @@ export default function Navbar({ onMenuToggle, menuOpen = false }) {
                             type="button"
                             aria-label="Open profile menu"
                             aria-expanded={profileOpen}
-                            onClick={() => setProfileOpen(true)}
-                            onFocus={() => setProfileOpen(true)}
+                            onClick={() => {
+                                setNotificationsOpen(false);
+                                setProfileOpen((isOpen) => !isOpen);
+                            }}
                             className="flex h-10 items-center gap-2 rounded-md px-1.5 text-left hover:bg-secondary sm:px-2"
                         >
                             <Image src="/admin-avatar.svg" alt={user?.name || 'User'} width={34} height={34} className="h-[34px] w-[34px] rounded-full border border-surface/40" />
@@ -328,7 +339,7 @@ export default function Navbar({ onMenuToggle, menuOpen = false }) {
                             <FiChevronDown aria-hidden="true" className="hidden h-4 w-4 sm:block" />
                         </button>
                         {profileOpen && (
-                            <div className="absolute right-0 top-10 z-50 w-64 rounded-md border border-primary/10 bg-surface p-4 text-primary shadow-xl">
+                            <div className="navbar-profile-popover absolute right-0 top-10 z-50 rounded-md border border-primary/10 bg-surface p-4 text-primary shadow-xl">
                                 <div className="flex items-center gap-3 border-b border-primary/10 pb-4">
                                     <Image src="/admin-avatar.svg" alt="" width={48} height={48} className="h-12 w-12 rounded-full" />
                                     <div className="min-w-0">

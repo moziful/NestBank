@@ -54,9 +54,38 @@ main {
   -webkit-overflow-scrolling: touch;
 }
 
+.bank-name-outline {
+  color: var(--color-accent);
+  -webkit-text-stroke: 0.55px #fff;
+}
+
+.navbar-notification-popover,
+.navbar-profile-popover {
+  max-width: calc(100vw - 1rem);
+  max-height: calc(100dvh - 5rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.navbar-notification-popover {
+  width: min(30rem, calc(100vw - 1rem));
+}
+
+.navbar-profile-popover {
+  width: min(22rem, calc(100vw - 1rem));
+}
 @media (max-width: 767px) {
   body {
     overflow: hidden;
+  }
+
+  .navbar-notification-popover {
+    position: fixed;
+    top: 4rem;
+    right: 0.5rem;
+    left: 0.5rem;
+    width: auto;
+    max-width: none;
   }
 
   main {
