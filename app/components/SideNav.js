@@ -12,6 +12,7 @@ const navItemsByRole = {
     { label: 'Bank Accounts', href: '/admin/bank-accounts' },
     { label: 'Transactions', href: '/admin/transactions' },
     { label: 'Approvals', href: '/admin/approvals' },
+    { label: 'Loans', href: '/admin/loans' },
     { label: 'Audit Logs', href: '/admin/audit-logs' },
     { label: 'Banking Settings', href: '/admin/settings' },
   ],
