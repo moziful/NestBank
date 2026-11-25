@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 
 const AuthContext = createContext(null);
 const ThemeContext = createContext({
@@ -38,7 +38,6 @@ export default function AppProviders({ children }) {
     const [loading, setLoading] = useState(true);
     const [theme, setThemeState] = useState('light');
     const router = useRouter();
-    const pathname = usePathname();
 
     // Theme initialization and synchronization
     useEffect(() => {
@@ -83,7 +82,7 @@ export default function AppProviders({ children }) {
 
     useEffect(() => {
         fetchSession();
-    }, [fetchSession, pathname]);
+    }, [fetchSession]);
 
     const logout = async () => {
         try {
