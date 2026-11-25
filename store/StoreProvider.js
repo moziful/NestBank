@@ -8,11 +8,7 @@ export default function StoreProvider({ children }) {
     const [store, setStore] = useState(null);
 
     useEffect(() => {
-        const timeoutId = window.setTimeout(() => {
-            setStore(makeStore());
-        }, 0);
-
-        return () => window.clearTimeout(timeoutId);
+        setStore(makeStore());
     }, []);
 
     if (!store) {
