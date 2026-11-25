@@ -6,6 +6,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { useAuth, useTheme } from '../providers';
 import { FiBell, FiChevronDown, FiLogOut, FiMoon, FiSearch, FiSun, FiShield, FiKey } from 'react-icons/fi';
+import { resolveNotificationHref } from '@/lib/notificationLinks';
 
 const searchEntriesByRole = {
     Admin: [
@@ -260,7 +261,7 @@ export default function Navbar() {
                                     ) : (
                                         notifications.slice(0, 6).map((notification) => {
                                             const isUnread = !notification.read;
-                                            const targetHref = notification.href || (role === 'Customer' ? '/customer/notifications' : role === 'Bank Staff' ? '/staff/notifications' : '/admin/overview');
+                                            const targetHref = resolveNotificationHref(notification, role);
                                             return (
                                                 <li key={notification._id}>
                                                     <Link

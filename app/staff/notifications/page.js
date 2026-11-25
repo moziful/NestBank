@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { FiBell, FiCheckCircle, FiAlertTriangle } from 'react-icons/fi';
+import { resolveNotificationHref } from '@/lib/notificationLinks';
 
 export default function StaffNotificationsPage() {
     const [notifications, setNotifications] = useState([]);
@@ -87,17 +88,27 @@ export default function StaffNotificationsPage() {
                             </div>
                         );
 
+                        const targetHref = resolveNotificationHref(n, 'Bank Staff');
                         return (
-                            <div
+                            <Link
                                 key={n._id}
-                                className={`rounded-xl border p-4 transition ${
+                                href={targetHref}
+                                onClick={async () => {
+                                    setNotifications((prev) => prev.map((x) => (x._id === n._id ? { ...x, read: true } : x)));
+                                    await fetch('/api/notifications', {
+                                        method: 'PATCH',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ notificationId: n._id }),
+                                    });
+                                }}
+                                className={`block rounded-xl border p-4 transition hover:border-accent/60 ${
                                     n.read
                                         ? 'border-primary/10 bg-surface/50 text-primary/70'
                                         : 'border-accent/40 bg-surface text-primary shadow-sm'
                                 }`}
                             >
-                                {n.href ? <Link href={n.href} className="block">{content}</Link> : content}
-                            </div>
+                                {content}
+                            </Link>
                         );
                     })}
                 </div>
