@@ -16,6 +16,8 @@ import Pagination from '@/app/components/Pagination';
 export default function CustomerTable({
     customers = [],
     pagination = {},
+    basePath = '/admin/customers',
+    permissions = {},
     onPageChange,
     onStatusChange,
     onBlockCustomer,
@@ -56,7 +58,7 @@ export default function CustomerTable({
                                 <tr
                                     key={c._id || c.customerId}
                                     className="hover:bg-primary/5 transition-colors group cursor-pointer"
-                                    onClick={() => router.push(`/admin/customers/${c._id || c.customerId}`)}
+                                    onClick={() => router.push(`${basePath}/${c._id || c.customerId}`)}
                                 >
                                     {/* Customer profile initials & name */}
                                     <td className="py-3 px-4">
@@ -125,7 +127,7 @@ export default function CustomerTable({
                                                         type="button"
                                                         onClick={() => {
                                                             setActionMenuOpenId(null);
-                                                            router.push(`/admin/customers/${c._id || c.customerId}`);
+                                                            router.push(`${basePath}/${c._id || c.customerId}`);
                                                         }}
                                                         className="flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-primary/10 font-medium cursor-pointer"
                                                     >

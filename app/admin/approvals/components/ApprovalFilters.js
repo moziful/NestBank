@@ -21,7 +21,7 @@ export default function ApprovalFilters({
     ];
 
     return (
-        <div className="bg-surface border border-primary/20 rounded-xl p-4 shadow-sm space-y-4">
+        <div className="bg-surface border border-primary/20 rounded-xl p-4 shadow-sm space-y-4 mb-4">
             {/* Tabs */}
             <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-primary/10">
                 {tabs.map((tab) => {
@@ -31,17 +31,15 @@ export default function ApprovalFilters({
                             key={tab.id}
                             type="button"
                             onClick={() => onTabChange(tab.id)}
-                            className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors flex items-center gap-1.5 cursor-pointer ${
-                                isActive
-                                    ? 'bg-accent text-surface shadow'
-                                    : 'opacity-70 hover:opacity-100 hover:bg-primary/5'
-                            }`}
+                            className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors flex items-center gap-1.5 cursor-pointer ${isActive
+                                ? 'bg-accent text-surface shadow'
+                                : 'opacity-70 hover:opacity-100 hover:bg-primary/5'
+                                }`}
                         >
                             {tab.label}
                             {tab.count !== undefined && tab.count > 0 && (
-                                <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
-                                    isActive ? 'bg-surface text-primary' : 'bg-primary/15'
-                                }`}>
+                                <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${isActive ? 'bg-surface text-primary' : 'bg-primary/15'
+                                    }`}>
                                     {tab.count}
                                 </span>
                             )}

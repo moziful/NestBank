@@ -7,6 +7,8 @@ export default function LoanTable({
     loans = [],
     loading,
     pagination,
+    basePath = '/admin/loans',
+    permissions = {},
     onPageChange,
     onOpenDisburseModal
 }) {
@@ -124,7 +126,7 @@ export default function LoanTable({
                                         {renderStatusBadge(loan.status, loan.disbursementStatus)}
                                     </td>
                                     <td className="py-3.5 px-4 text-right space-x-1.5 whitespace-nowrap">
-                                        {isPendingDisbursement && (
+                                        {permissions.canDisburse !== false && isPendingDisbursement && (
                                             <button
                                                 type="button"
                                                 onClick={() => onOpenDisburseModal(loan)}
@@ -134,7 +136,7 @@ export default function LoanTable({
                                             </button>
                                         )}
                                         <Link
-                                            href={`/admin/loans/${loan.loanId || loan._id}`}
+                                            href={`${basePath}/${loan.loanId || loan._id}`}
                                             className="px-2.5 py-1 rounded bg-accent/15 hover:bg-accent/25 text-accent font-semibold transition-colors text-[11px] inline-block"
                                         >
                                             View Details

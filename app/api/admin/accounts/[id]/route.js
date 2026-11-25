@@ -15,7 +15,7 @@ async function resolveAccount(db, id) {
 export async function GET(request, { params }) {
     try {
         const session = await getSession(request);
-        if (!session || !hasRole(session, ['Admin'])) {
+        if (!session || !hasRole(session, ['Admin', 'Bank Staff'])) {
             return NextResponse.json({ success: false, message: 'Forbidden: Admin access required' }, { status: 403 });
         }
 
@@ -73,7 +73,7 @@ export async function GET(request, { params }) {
 export async function PATCH(request, { params }) {
     try {
         const session = await getSession(request);
-        if (!session || !hasRole(session, ['Admin'])) {
+        if (!session || !hasRole(session, ['Admin', 'Bank Staff'])) {
             return NextResponse.json({ success: false, message: 'Forbidden: Admin access required' }, { status: 403 });
         }
 

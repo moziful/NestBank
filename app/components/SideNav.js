@@ -20,9 +20,10 @@ const navItemsByRole = {
     { label: 'Overview', href: '/staff/overview' },
     { label: 'Register Customer', href: '/staff/register-customer' },
     { label: 'Customers', href: '/staff/customers' },
-    { label: 'Account Directory', href: '/staff/account-directory' },
+    { label: 'Accounts', href: '/staff/accounts' },
     { label: 'Transactions', href: '/staff/transactions' },
-    { label: 'Pending Requests', href: '/staff/pending-requests' },
+    { label: 'Pending Requests', href: '/staff/requests' },
+    { label: 'Loan Applications', href: '/staff/loan-applications' },
   ],
   Customer: [
     { label: 'Overview', href: '/overview' },

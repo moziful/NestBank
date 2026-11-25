@@ -17,6 +17,8 @@ import Pagination from '@/app/components/Pagination';
 export default function AccountTable({
     accounts = [],
     pagination = {},
+    basePath = '/admin/bank-accounts',
+    permissions = {},
     onPageChange,
     onFreezeAccount,
     onUnfreezeAccount,
@@ -52,7 +54,7 @@ export default function AccountTable({
                                 <tr
                                     key={acc._id || acc.accountNumber}
                                     className="hover:bg-primary/5 transition-colors group cursor-pointer"
-                                    onClick={() => router.push(`/admin/bank-accounts/${acc._id || acc.accountNumber}`)}
+                                    onClick={() => router.push(`${basePath}/${acc._id || acc.accountNumber}`)}
                                 >
                                     {/* Account Number */}
                                     <td className="py-3 px-4 font-mono font-bold tracking-wider text-accent text-xs">
@@ -119,7 +121,7 @@ export default function AccountTable({
                                                         type="button"
                                                         onClick={() => {
                                                             setActionMenuOpenId(null);
-                                                            router.push(`/admin/bank-accounts/${acc._id || acc.accountNumber}`);
+                                                            router.push(`${basePath}/${acc._id || acc.accountNumber}`);
                                                         }}
                                                         className="flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-primary/10 font-medium cursor-pointer"
                                                     >
@@ -127,43 +129,47 @@ export default function AccountTable({
                                                         View Details
                                                     </button>
 
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => {
-                                                            setActionMenuOpenId(null);
-                                                            onManageLimits(acc);
-                                                        }}
-                                                        className="flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-primary/10 font-medium cursor-pointer"
-                                                    >
-                                                        <FiSliders className="h-3.5 w-3.5 text-blue-600" />
-                                                        Manage Limits
-                                                    </button>
+                                                    {permissions.canManageLimits !== false && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => {
+                                                                setActionMenuOpenId(null);
+                                                                onManageLimits(acc);
+                                                            }}
+                                                            className="flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-primary/10 font-medium cursor-pointer"
+                                                        >
+                                                            <FiSliders className="h-3.5 w-3.5 text-blue-600" />
+                                                            Manage Limits
+                                                        </button>
+                                                    )}
 
-                                                    {acc.status === 'Active' ? (
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => {
-                                                                setActionMenuOpenId(null);
-                                                                onFreezeAccount(acc);
-                                                            }}
-                                                            className="flex w-full items-center gap-2 border-t border-primary/10 px-3 py-2 text-left hover:bg-primary/10 text-sky-700 font-medium cursor-pointer"
-                                                        >
-                                                            <FiLock className="h-3.5 w-3.5 text-sky-600" />
-                                                            Freeze Account
-                                                        </button>
-                                                    ) : acc.status === 'Frozen' ? (
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => {
-                                                                setActionMenuOpenId(null);
-                                                                onUnfreezeAccount(acc);
-                                                            }}
-                                                            className="flex w-full items-center gap-2 border-t border-primary/10 px-3 py-2 text-left hover:bg-primary/10 text-emerald-600 font-medium cursor-pointer"
-                                                        >
-                                                            <FiUnlock className="h-3.5 w-3.5 text-emerald-600" />
-                                                            Unfreeze Account
-                                                        </button>
-                                                    ) : null}
+                                                    {permissions.canFreeze !== false && (
+                                                        acc.status === 'Active' ? (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    setActionMenuOpenId(null);
+                                                                    onFreezeAccount(acc);
+                                                                }}
+                                                                className="flex w-full items-center gap-2 border-t border-primary/10 px-3 py-2 text-left hover:bg-primary/10 text-sky-700 font-medium cursor-pointer"
+                                                            >
+                                                                <FiLock className="h-3.5 w-3.5 text-sky-600" />
+                                                                Freeze Account
+                                                            </button>
+                                                        ) : acc.status === 'Frozen' ? (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    setActionMenuOpenId(null);
+                                                                    onUnfreezeAccount(acc);
+                                                                }}
+                                                                className="flex w-full items-center gap-2 border-t border-primary/10 px-3 py-2 text-left hover:bg-primary/10 text-emerald-600 font-medium cursor-pointer"
+                                                            >
+                                                                <FiUnlock className="h-3.5 w-3.5 text-emerald-600" />
+                                                                Unfreeze Account
+                                                            </button>
+                                                        ) : null
+                                                    )}
                                                 </div>
                                             )}
                                         </div>

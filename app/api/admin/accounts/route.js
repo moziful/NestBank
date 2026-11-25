@@ -7,7 +7,7 @@ import { ObjectId } from 'mongodb';
 export async function GET(request) {
     try {
         const session = await getSession(request);
-        if (!session || !hasRole(session, ['Admin'])) {
+        if (!session || !hasRole(session, ['Admin', 'Bank Staff'])) {
             return NextResponse.json({ success: false, message: 'Forbidden: Admin access required' }, { status: 403 });
         }
 
@@ -79,7 +79,7 @@ export async function GET(request) {
 export async function POST(request) {
     try {
         const session = await getSession(request);
-        if (!session || !hasRole(session, ['Admin'])) {
+        if (!session || !hasRole(session, ['Admin', 'Bank Staff'])) {
             return NextResponse.json({ success: false, message: 'Forbidden: Admin access required' }, { status: 403 });
         }
 
