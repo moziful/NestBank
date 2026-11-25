@@ -3,6 +3,6 @@ import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 export const baseApi = createApi({
     reducerPath: 'api',
     baseQuery: fetchBaseQuery({ baseUrl: '/api' }),
-    tagTypes: ['Profile', 'AdminOverview'],
+    tagTypes: ['Profile', 'AdminOverview', 'StaffList', 'StaffStats', 'StaffDetail', 'StaffActivity', 'AuditLogs'],
     endpoints: () => ({}),
 });
