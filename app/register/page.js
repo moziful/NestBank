@@ -49,7 +49,7 @@ export default function RegisterPage() {
 
     return (
         <div className="flex min-h-[calc(100vh-64px)] items-center justify-center p-4">
-            <div className="w-full max-w-md rounded-xl border border-primary/20 bg-surface p-8 shadow-2xl">
+            <div className="w-full max-w-md rounded-xl border border-primary/20 bg-surface p-5 sm:p-8 shadow-2xl">
                 <div className="text-center">
                     <h1 className="text-2xl font-bold tracking-tight text-primary">Customer Registration</h1>
                     <p className="mt-2 text-sm text-primary/70">

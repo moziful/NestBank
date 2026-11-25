@@ -8,6 +8,12 @@ export const metadata = {
   description: "Secure Digital Banking Portal",
 };
 
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+};
+
 export default function RootLayout({ children }) {
   return (
     <html
@@ -15,7 +21,7 @@ export default function RootLayout({ children }) {
       className="h-full antialiased"
       suppressHydrationWarning
     >
-      <body className="h-screen overflow-hidden flex flex-col">
+      <body className="h-dvh overflow-hidden flex flex-col">
         <AppProviders>
           <StoreProvider>
             <Shell>{children}</Shell>

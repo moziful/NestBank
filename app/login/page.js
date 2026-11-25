@@ -55,7 +55,7 @@ function LoginForm() {
     };
 
     return (
-        <div className="w-full max-w-md rounded-xl border border-primary/20 bg-surface p-8 shadow-2xl">
+        <div className="w-full max-w-md rounded-xl border border-primary/20 bg-surface p-5 sm:p-8 shadow-2xl">
             <div className="text-center">
                 <h1 className="text-2xl font-bold tracking-tight text-primary">NestBank Sign In</h1>
                 <p className="mt-2 text-sm text-primary/70">

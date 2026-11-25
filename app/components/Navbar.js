@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { useAuth, useTheme } from '../providers';
-import { FiBell, FiChevronDown, FiLogOut, FiMoon, FiSearch, FiSun, FiShield, FiKey } from 'react-icons/fi';
+import { FiBell, FiChevronDown, FiLogOut, FiMoon, FiSearch, FiSun, FiShield, FiKey, FiMenu } from 'react-icons/fi';
 import { resolveNotificationHref } from '@/lib/notificationLinks';
 
 const searchEntriesByRole = {
@@ -81,7 +81,7 @@ function SearchBox({ role, query, onQueryChange, mobile = false }) {
     );
 }
 
-export default function Navbar() {
+export default function Navbar({ onMenuToggle, menuOpen = false }) {
     const router = useRouter();
     const pathname = usePathname();
     const { resolvedTheme, setTheme } = useTheme();
@@ -180,7 +180,7 @@ export default function Navbar() {
     if (pathname === '/login' || pathname === '/register') {
         return (
             <header className="z-40 shrink-0 bg-primary text-surface shadow-sm">
-                <div className="flex min-h-16 items-center justify-between px-4 sm:px-6">
+                <div className="flex min-h-16 items-center justify-between gap-3 px-3 sm:px-6">
                     <Link href="/" aria-label="NestBank" className="flex shrink-0 items-center gap-3">
                         <Image
                             src="/NestBankLogo.jpg"
@@ -188,10 +188,10 @@ export default function Navbar() {
                             width={150}
                             height={31}
                             priority
-                            className="h-8 w-[150px] object-contain"
+                            className="h-7 w-[128px] object-contain sm:h-8 sm:w-[150px]"
                         />
                     </Link>
-                    <div className="flex items-center gap-4 text-sm font-medium">
+                    <div className="flex items-center gap-2 text-xs font-medium sm:gap-4 sm:text-sm">
                         {pathname === '/login' ? (
                             <Link href="/register" className="text-surface hover:text-accent underline">
                                 Register Account
@@ -210,6 +210,17 @@ export default function Navbar() {
     return (
         <header className="z-40 shrink-0 bg-primary text-surface shadow-sm">
             <div className="flex min-h-16 items-center gap-4 border-b border-surface/20 px-4 sm:px-6">
+                {onMenuToggle && (
+                    <button
+                        type="button"
+                        aria-label="Open navigation menu"
+                        aria-expanded={menuOpen}
+                        onClick={onMenuToggle}
+                        className="grid h-10 w-10 shrink-0 place-items-center rounded-md border border-surface/20 text-surface hover:bg-secondary md:hidden"
+                    >
+                        <FiMenu aria-hidden="true" className="h-5 w-5" />
+                    </button>
+                )}
                 <Link href={dashboardHref} aria-label="NestBank dashboard" className="flex shrink-0 items-center gap-3">
                     <Image
                         src="/NestBankLogo.jpg"
@@ -217,7 +228,7 @@ export default function Navbar() {
                         width={150}
                         height={31}
                         priority
-                        className="h-8 w-[150px] object-contain"
+                        className="h-7 w-[128px] object-contain sm:h-8 sm:w-[150px]"
                     />
                 </Link>
 
