@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getSession, hasRole } from '@/lib/auth';
 import { getDb } from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
+import { notifyUser, notifyRoles } from '@/lib/notifications';
 
 // GET /api/admin/accounts - list accounts with search, filters, pagination, and sorting
 export async function GET(request) {
@@ -169,6 +170,21 @@ export async function POST(request) {
             recordRef: accountNumber,
             severity: 'Info',
             createdAt: new Date(),
+        });
+
+        await notifyUser({
+            userId: customer._id.toString(),
+            title: 'Bank Account Created & Activated',
+            message: `Your new ${accountType} account (${accountNumber}) has been opened with an opening balance of ৳${depositVal.toLocaleString()}.`,
+            category: 'ACCOUNT',
+            href: `/customer/accounts/${result.insertedId.toString()}`,
+        });
+
+        await notifyRoles(['Admin'], {
+            title: 'New Bank Account Opened',
+            message: `${accountType} account ${accountNumber} was created for ${customer.name} by ${session.name || session.username}.`,
+            category: 'ACCOUNT',
+            href: `/admin/bank-accounts/${result.insertedId.toString()}`,
         });
 
         return NextResponse.json({

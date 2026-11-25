@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getSession, hasRole } from '@/lib/auth';
 import { getDb } from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
+import { notifyUser } from '@/lib/notifications';
 
 export async function POST(request, context) {
     try {
@@ -68,6 +69,14 @@ export async function POST(request, context) {
                 createdAt: now
             });
 
+            await notifyUser({
+                userId: loan.userId,
+                title: 'Loan Application Rejected',
+                message: `Your loan application (${loan.loanId || loan.applicationId}) was not approved. Reason: ${rejectionReason.trim()}`,
+                category: 'LOAN',
+                href: `/customer/loans/${loan.loanId || loan._id.toString()}`,
+            });
+
             return NextResponse.json({ success: true, message: 'Loan application rejected.' });
         }
 
@@ -101,6 +110,14 @@ export async function POST(request, context) {
                 recordRef: loan.loanId || loan.applicationId,
                 severity: 'Info',
                 createdAt: now
+            });
+
+            await notifyUser({
+                userId: loan.userId,
+                title: 'Loan Application Approved',
+                message: `Your loan application (${loan.loanId || loan.applicationId}) for ৳${finalApprovedAmount.toLocaleString()} has been approved and is queued for disbursement.`,
+                category: 'LOAN',
+                href: `/customer/loans/${loan.loanId || loan._id.toString()}`,
             });
 
             return NextResponse.json({

@@ -3,6 +3,7 @@ import { getSession, hasRole } from '@/lib/auth';
 import { getDb } from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
 import { createAuditLog } from '@/lib/audit';
+import { notifyRoles, notifyUser } from '@/lib/notifications';
 
 export async function POST(request) {
     try {
@@ -51,6 +52,23 @@ export async function POST(request) {
             targetId: String(reqItem._id),
             description: notes || reason || 'Request forwarded to admin',
         });
+
+        await notifyRoles(['Admin'], {
+            title: 'Request Forwarded for Admin Approval',
+            message: `Staff (${session.username}) forwarded request ${reqItem.requestId || reqItem._id} for Admin review.`,
+            category: 'APPROVAL',
+            href: '/admin/approvals',
+        });
+
+        if (reqItem.userId) {
+            await notifyUser({
+                userId: reqItem.userId,
+                title: 'Request Under Final Review',
+                message: `Your request (${reqItem.requestId || 'N/A'}) has been verified by Staff and forwarded to Admin.`,
+                category: 'APPROVAL',
+                href: '/customer/transactions',
+            });
+        }
 
         return NextResponse.json({ success: true, message: 'Request forwarded to Admin successfully' });
     } catch (err) {

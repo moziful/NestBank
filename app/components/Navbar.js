@@ -38,25 +38,7 @@ const searchEntriesByRole = {
 const overviewPaths = {
     Admin: '/admin/overview',
     'Bank Staff': '/staff/overview',
-    Customer: '/overview',
-};
-
-const notificationsByRole = {
-    Admin: [
-        { id: 'admin-approval', title: 'Transfer needs approval', detail: 'A transfer is waiting for your review.', href: '/admin/approvals' },
-        { id: 'admin-transaction', title: 'Security policy enforced', detail: 'All customer access restricted by role.', href: '/admin/overview' },
-        { id: 'admin-customer', title: 'Customer registered', detail: 'A new customer profile is ready to review.', href: '/admin/customers' },
-    ],
-    'Bank Staff': [
-        { id: 'staff-request', title: 'Transaction request', detail: 'A customer request is ready to process.', href: '/staff/pending-requests' },
-        { id: 'staff-transaction', title: 'Transaction processed', detail: 'The transaction was recorded successfully.', href: '/staff/transactions' },
-        { id: 'staff-customer', title: 'Customer registration', detail: 'Continue a recently started registration.', href: '/staff/register-customer' },
-    ],
-    Customer: [
-        { id: 'customer-transfer', title: 'Transfer successful', detail: 'Your transfer was completed successfully.', href: '/transactions' },
-        { id: 'customer-security', title: 'Security Check', detail: 'Ensure your transaction PIN is configured.', href: '/profile-security' },
-        { id: 'customer-statement', title: 'Statement ready', detail: 'Your latest statement is available.', href: '/statements' },
-    ],
+    Customer: '/customer',
 };
 
 function SearchBox({ role, query, onQueryChange, mobile = false }) {
@@ -106,13 +88,37 @@ export default function Navbar() {
     const [query, setQuery] = useState('');
     const [notificationsOpen, setNotificationsOpen] = useState(false);
     const [profileOpen, setProfileOpen] = useState(false);
-    const [readNotificationIds, setReadNotificationIds] = useState([]);
+    const [notifications, setNotifications] = useState([]);
+    const [unreadCount, setUnreadCount] = useState(0);
     const notificationRef = useRef(null);
 
     const role = user?.role || 'Customer';
-    const notifications = notificationsByRole[role] ?? [];
-    const unreadCount = notifications.filter((notification) => !readNotificationIds.includes(notification.id)).length;
-    const dashboardHref = overviewPaths[role] || '/overview';
+    const dashboardHref = overviewPaths[role] || '/customer';
+
+    useEffect(() => {
+        if (!user) return undefined;
+        let cancelled = false;
+
+        async function loadNotifications() {
+            try {
+                const res = await fetch('/api/notifications');
+                const json = await res.json();
+                if (!cancelled && json.success) {
+                    setNotifications(json.notifications || []);
+                    setUnreadCount(json.unreadCount || 0);
+                }
+            } catch {
+                // Ignore transient network errors
+            }
+        }
+
+        loadNotifications();
+        const timer = setInterval(loadNotifications, 25000);
+        return () => {
+            cancelled = true;
+            clearInterval(timer);
+        };
+    }, [user, pathname]);
 
     useEffect(() => {
         if (!notificationsOpen) return undefined;
@@ -142,17 +148,31 @@ export default function Navbar() {
         setTheme((resolvedTheme ?? 'light') === 'dark' ? 'light' : 'dark');
     }
 
-    function markNotificationRead(notificationId) {
-        setReadNotificationIds((currentIds) => currentIds.includes(notificationId)
-            ? currentIds
-            : [...currentIds, notificationId]);
+    async function markNotificationRead(notificationId) {
+        setNotifications((prev) =>
+            prev.map((n) => (n._id === notificationId ? { ...n, read: true } : n))
+        );
+        setUnreadCount((c) => Math.max(0, c - 1));
         setNotificationsOpen(false);
+        try {
+            await fetch('/api/notifications', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ notificationId }),
+            });
+        } catch {}
     }
 
-    function markAllNotificationsRead() {
-        setReadNotificationIds((currentIds) => [
-            ...new Set([...currentIds, ...notifications.map((notification) => notification.id)]),
-        ]);
+    async function markAllNotificationsRead() {
+        setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+        setUnreadCount(0);
+        try {
+            await fetch('/api/notifications', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ markAll: true }),
+            });
+        } catch {}
     }
 
     // Hide or simplify navbar on auth pages
@@ -234,27 +254,40 @@ export default function Navbar() {
                                         </button>
                                     )}
                                 </div>
-                                <ul className="divide-y divide-primary/10">
-                                    {notifications.map((notification) => {
-                                        const isUnread = !readNotificationIds.includes(notification.id);
-                                        return (
-                                            <li key={notification.id}>
-                                                <Link
-                                                    href={notification.href}
-                                                    onClick={() => markNotificationRead(notification.id)}
-                                                    className="flex gap-3 py-3 text-sm hover:text-accent"
-                                                >
-                                                    <span aria-hidden="true" className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${isUnread ? 'bg-accent' : 'bg-primary/20'}`} />
-                                                    <span>
-                                                        <span className="mb-1 block font-medium">{notification.title}</span>
-                                                        <span className="block text-xs opacity-70">{notification.detail}</span>
-                                                    </span>
-                                                </Link>
-                                            </li>
-                                        );
-                                    })}
+                                <ul className="divide-y divide-primary/10 max-h-80 overflow-y-auto">
+                                    {notifications.length === 0 ? (
+                                        <li className="py-6 text-center text-xs opacity-65">No notifications yet.</li>
+                                    ) : (
+                                        notifications.slice(0, 6).map((notification) => {
+                                            const isUnread = !notification.read;
+                                            const targetHref = notification.href || (role === 'Customer' ? '/customer/notifications' : role === 'Bank Staff' ? '/staff/notifications' : '/admin/overview');
+                                            return (
+                                                <li key={notification._id}>
+                                                    <Link
+                                                        href={targetHref}
+                                                        onClick={() => markNotificationRead(notification._id)}
+                                                        className="flex gap-3 py-3 text-sm hover:text-accent"
+                                                    >
+                                                        <span aria-hidden="true" className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${isUnread ? 'bg-accent' : 'bg-primary/20'}`} />
+                                                        <span>
+                                                            <span className="mb-1 block font-medium">{notification.title}</span>
+                                                            <span className="block text-xs opacity-70">{notification.message}</span>
+                                                        </span>
+                                                    </Link>
+                                                </li>
+                                            );
+                                        })
+                                    )}
                                 </ul>
-                                {unreadCount === 0 && <p className="border-t border-primary/10 pt-3 text-xs opacity-70">You are all caught up.</p>}
+                                {role !== 'Admin' && (
+                                    <Link
+                                        href={role === 'Customer' ? '/customer/notifications' : '/staff/notifications'}
+                                        onClick={() => setNotificationsOpen(false)}
+                                        className="mt-2 block border-t border-primary/10 pt-2.5 text-center text-xs font-semibold text-accent hover:underline"
+                                    >
+                                        View all notifications
+                                    </Link>
+                                )}
                             </div>
                         )}
                     </div>

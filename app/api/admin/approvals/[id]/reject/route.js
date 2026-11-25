@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getSession, hasRole } from '@/lib/auth';
 import { getDb } from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
+import { notifyUser } from '@/lib/notifications';
 
 export async function POST(request, context) {
     try {
@@ -56,6 +57,15 @@ export async function POST(request, context) {
             recordRef: reqDoc.requestId,
             severity: 'Security',
             createdAt: now
+        });
+
+        const reqType = (reqDoc.type || 'Request');
+        await notifyUser({
+            userId: reqDoc.userId,
+            title: `${reqType} Request Rejected`,
+            message: `Your ${reqType.toLowerCase()} request (${reqDoc.requestId}) was rejected. Reason: ${rejectionReason.trim()}`,
+            category: 'APPROVAL',
+            href: reqType.toLowerCase() === 'withdrawal' ? '/customer/withdraw' : '/customer/deposit',
         });
 
         return NextResponse.json({

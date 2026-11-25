@@ -3,6 +3,7 @@ import { getSession, hasRole } from '@/lib/auth';
 import { getDb } from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
 import { createAuditLog } from '@/lib/audit';
+import { notifyRoles, notifyUser } from '@/lib/notifications';
 
 export async function POST(request) {
     try {
@@ -51,6 +52,23 @@ export async function POST(request) {
             targetId: String(loan._id),
             description: notes || 'Loan verified and forwarded to Admin',
         });
+
+        await notifyRoles(['Admin'], {
+            title: 'Loan Verified & Forwarded',
+            message: `Staff (${session.username}) verified loan ${loan.loanId || loan._id} and forwarded it for underwriting decision.`,
+            category: 'LOAN',
+            href: `/admin/loans/${loan.loanId || loan._id}`,
+        });
+
+        if (loan.userId) {
+            await notifyUser({
+                userId: loan.userId,
+                title: 'Loan Under Final Underwriting',
+                message: `Your loan application (${loan.loanId || 'N/A'}) passed initial verification and is under Admin review.`,
+                category: 'LOAN',
+                href: `/customer/loans/${loan.loanId || loan._id}`,
+            });
+        }
 
         return NextResponse.json({ success: true, message: 'Loan application verified and forwarded to Admin' });
     } catch (err) {

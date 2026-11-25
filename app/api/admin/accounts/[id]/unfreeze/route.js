@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getSession, hasRole } from '@/lib/auth';
 import { getDb } from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
+import { notifyUser } from '@/lib/notifications';
 
 async function resolveAccount(db, id) {
     if (ObjectId.isValid(id)) {
@@ -49,6 +50,14 @@ export async function POST(request, { params }) {
             recordRef: account.accountNumber,
             severity: 'Info',
             createdAt: new Date(),
+        });
+
+        await notifyUser({
+            userId: account.userId,
+            title: 'Account Restored to Active',
+            message: `Your account ${account.accountNumber} has been unfrozen and restored to Active status.`,
+            category: 'ACCOUNT',
+            href: `/customer/accounts/${account._id.toString()}`,
         });
 
         return NextResponse.json({

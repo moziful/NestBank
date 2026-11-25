@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getSession, hasRole, isAccountActive } from '@/lib/auth';
 import { getDb } from '@/lib/mongodb';
 import { createAuditLog } from '@/lib/audit';
+import { notifyRoles } from '@/lib/notifications';
 
 const LOAN_RATES = {
     'Personal Loan': 11.5,
@@ -120,8 +121,16 @@ export async function POST(request) {
             title: 'Loan Application Submitted',
             message: `Your ${loanType} application (${loanId}) for ৳${principal.toLocaleString()} has been received.`,
             category: 'LOAN',
+            href: `/customer/loans/${loanId}`,
             read: false,
             createdAt: now,
+        });
+
+        await notifyRoles(['Admin', 'Bank Staff'], {
+            title: 'New Loan Application Submitted',
+            message: `${session.name || session.username} applied for ${loanType} (${loanId}) of ৳${principal.toLocaleString()}.`,
+            category: 'LOAN',
+            href: '/staff/loan-applications',
         });
 
         await createAuditLog({

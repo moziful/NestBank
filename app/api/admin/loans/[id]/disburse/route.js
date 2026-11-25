@@ -3,6 +3,7 @@ import { getSession, hasRole } from '@/lib/auth';
 import { getDb } from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
 import { createAuditLog } from '@/lib/audit';
+import { notifyUser } from '@/lib/notifications';
 
 export async function POST(request, context) {
     try {
@@ -150,6 +151,14 @@ export async function POST(request, context) {
             description: `Disbursed ৳${principal.toLocaleString()} into account ${account.accountNumber} for loan ${loan.loanId}`,
             severity: 'WARNING',
             outcome: 'SUCCESS'
+        });
+
+        await notifyUser({
+            userId: loan.userId || account.userId,
+            title: 'Loan Funds Disbursed',
+            message: `৳${principal.toLocaleString()} for loan ${loan.loanId || loan.applicationId} has been disbursed to your account ${account.accountNumber}.`,
+            category: 'LOAN',
+            href: `/customer/loans/${loan.loanId || loan._id.toString()}`,
         });
 
         return NextResponse.json({

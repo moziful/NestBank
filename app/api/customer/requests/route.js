@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getSession, hasRole, isAccountActive } from '@/lib/auth';
 import { getDb } from '@/lib/mongodb';
 import { createAuditLog } from '@/lib/audit';
+import { notifyRoles } from '@/lib/notifications';
 
 export async function GET(request) {
     try {
@@ -129,11 +130,19 @@ export async function POST(request) {
 
         await db.collection('notifications').insertOne({
             userId: session.userId,
-            title: `${type} Request Submitted`,
-            message: `Your ${type.toLowerCase()} request (${reqId}) for ৳${reqAmount.toLocaleString()} is pending approval.`,
+            title: `${type} Request Submitted for Review`,
+            message: `Your ${type.toLowerCase()} request (${reqId}) for ৳${reqAmount.toLocaleString()} is pending review.`,
             category: 'REQUEST',
+            href: type === 'Withdrawal' ? '/customer/withdraw' : '/customer/deposit',
             read: false,
             createdAt: now,
+        });
+
+        await notifyRoles(['Admin', 'Bank Staff'], {
+            title: `New ${type} Request for Review`,
+            message: `${session.name || session.username} submitted a ${type.toLowerCase()} request (${reqId}) for ৳${reqAmount.toLocaleString()}.`,
+            category: 'APPROVAL',
+            href: '/staff/requests',
         });
 
         await createAuditLog({

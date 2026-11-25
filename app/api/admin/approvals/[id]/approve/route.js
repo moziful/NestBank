@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getSession, hasRole } from '@/lib/auth';
 import { getDb } from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
+import { notifyUser } from '@/lib/notifications';
 
 export async function POST(request, context) {
     try {
@@ -174,6 +175,14 @@ export async function POST(request, context) {
             recordRef: reqDoc.requestId,
             severity: 'Info',
             createdAt: now
+        });
+
+        await notifyUser({
+            userId: reqDoc.userId || account.userId,
+            title: `${type === 'WITHDRAWAL' ? 'Withdrawal' : 'Deposit'} Request Approved`,
+            message: `Your ${type.toLowerCase()} request (${reqDoc.requestId}) for ৳${amount.toLocaleString()} on account ${account.accountNumber} has been approved and posted (${txId}).`,
+            category: 'APPROVAL',
+            href: '/customer/transactions',
         });
 
         return NextResponse.json({
