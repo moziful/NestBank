@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 const roleRoutePrefixes = [
     { prefix: '/admin', roles: ['Admin'] },
     { prefix: '/staff', roles: ['Admin', 'Bank Staff'] },
+    { prefix: '/customer', roles: ['Customer'] },
     { prefix: '/overview', roles: ['Customer'] },
     { prefix: '/my-accounts', roles: ['Customer'] },
     { prefix: '/transfer-money', roles: ['Customer'] },

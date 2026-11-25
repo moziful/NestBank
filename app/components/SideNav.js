@@ -26,12 +26,17 @@ const navItemsByRole = {
     { label: 'Loan Applications', href: '/staff/loan-applications' },
   ],
   Customer: [
-    { label: 'Overview', href: '/overview' },
-    { label: 'My Accounts', href: '/my-accounts' },
-    { label: 'Transfer Money', href: '/transfer-money' },
-    { label: 'Transactions', href: '/transactions' },
-    { label: 'Configure PIN', href: '/profile-security' },
-    { label: 'Statements', href: '/statements' },
+    { label: 'Overview', href: '/customer' },
+    { label: 'My Accounts', href: '/customer/accounts' },
+    { label: 'Transfer Money', href: '/customer/transfer' },
+    { label: 'NestPay', href: '/customer/nestpay', badge: 'Soon' },
+    { label: 'Transactions', href: '/customer/transactions' },
+    { label: 'Deposit', href: '/customer/deposit' },
+    { label: 'Withdraw', href: '/customer/withdraw' },
+    { label: 'Loans', href: '/customer/loans' },
+    { label: 'Statements', href: '/customer/statements' },
+    { label: 'Notifications', href: '/customer/notifications' },
+    { label: 'Profile & Security', href: '/customer/profile' },
   ],
 };
 
@@ -56,12 +61,17 @@ export default function SideNav() {
             <li key={item.href} className="mb-2">
               <Link
                 href={item.href}
-                className={`block rounded-md px-3 py-2 text-base no-underline transition-colors ${isActive
+                className={`flex items-center justify-between rounded-md px-3 py-2 text-base no-underline transition-colors ${isActive
                   ? 'bg-accent text-surface'
                   : 'text-surface hover:bg-secondary hover:text-surface'
                   }`}
               >
-                {item.label}
+                <span>{item.label}</span>
+                {item.badge && (
+                  <span className="rounded-full bg-accent/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-accent">
+                    {item.badge}
+                  </span>
+                )}
               </Link>
             </li>
           );

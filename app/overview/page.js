@@ -1,5 +1,3 @@
-import RoleOverview from '../components/RoleOverview';
+import CustomerOverviewPage from '../customer/page';
 
-export default function CustomerOverviewPage() {
-    return <RoleOverview role="Customer" />;
-}
+export default CustomerOverviewPage;
