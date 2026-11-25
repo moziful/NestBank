@@ -11,9 +11,8 @@ import {
     FiUnlock,
     FiSliders,
     FiMoreVertical,
-    FiChevronLeft,
-    FiChevronRight,
 } from 'react-icons/fi';
+import Pagination from '@/app/components/Pagination';
 
 export default function AccountTable({
     accounts = [],
@@ -183,35 +182,11 @@ export default function AccountTable({
             </div>
 
             {/* Pagination Controls */}
-            {pagination.totalPages > 1 && (
-                <div className="flex items-center justify-between border-t border-primary/10 px-4 py-3 text-xs">
-                    <span className="opacity-70">
-                        Showing {(pagination.page - 1) * pagination.limit + 1} -{' '}
-                        {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} accounts
-                    </span>
-                    <div className="flex items-center gap-2">
-                        <button
-                            type="button"
-                            disabled={pagination.page <= 1}
-                            onClick={() => onPageChange(pagination.page - 1)}
-                            className="p-1.5 rounded-md border border-primary/20 hover:bg-primary/10 disabled:opacity-40 cursor-pointer"
-                        >
-                            <FiChevronLeft className="h-4 w-4" />
-                        </button>
-                        <span className="font-semibold">
-                            {pagination.page} / {pagination.totalPages}
-                        </span>
-                        <button
-                            type="button"
-                            disabled={pagination.page >= pagination.totalPages}
-                            onClick={() => onPageChange(pagination.page + 1)}
-                            className="p-1.5 rounded-md border border-primary/20 hover:bg-primary/10 disabled:opacity-40 cursor-pointer"
-                        >
-                            <FiChevronRight className="h-4 w-4" />
-                        </button>
-                    </div>
-                </div>
-            )}
+            <Pagination
+                pagination={pagination}
+                onPageChange={onPageChange}
+                entityName="accounts"
+            />
         </div>
     );
 }
